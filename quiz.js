@@ -224,9 +224,7 @@ var MatchQuestion = $.inherit(Question,
 
     ui: function () { return $('#match'); },
 
-    st: function () { return $('#match #static'); },
-
-    so: function () { return $('#match #sortable'); },
+    trs: function () { return $('#match table tr'); },
 
     show: function () {
         this.__base();
@@ -236,18 +234,34 @@ var MatchQuestion = $.inherit(Question,
             for (var i = 0; i < this.lvariants.length; ++i)
                 answer.push(i);
         }
-        this.makeVariants(this.st().children('ul'), this.lvariants, function (elem, i, text) {
-            elem.html(text);
+        var variants = [];
+        for (var i = 0; i < this.lvariants.length; ++i) {
+            variants.push([ this.lvariants[i], answer[i] ]);
+        }
+        var that = this;
+        this.makeVariants(this.ui().children('table'), variants, function (elem, i, text) {
+            elem.children('th.static').html(text[0]);
+            elem.children('th.sortable').attr('id', text[1]).html(that.rvariants[text[1]]);
         });
 
-        var that = this;
-        this.makeVariants(this.so().children('ul'), answer, function (elem, i, text) {
-            elem.attr('id', text).html(that.rvariants[text]);
-        }).sortable();
+        this.ui().children('table').sortable({
+            items: "tr",
+            update: function (event, ui) {
+                $.each(that.trs().not('.hidden'), function (i, elem) {
+                    $(this).children('th.static').html(that.lvariants[i]);
+                });
+            },
+            start: function (event, ui) {
+                ui.item.children('td:first-child').hide();
+            },
+            stop: function (event, ui) {
+                ui.item.children('td:first-child').show();
+            }
+        }).disableSelection();
     },
 
     rememberAnswer: function () {
-        this.answer = $.map(this.so().children('ul').children('li'), function (elem) {
+        this.answer = $.map(this.trs().children('th.sortable'), function (elem) {
             return elem.id ? elem.id : null;
         });
     },
